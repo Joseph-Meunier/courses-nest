@@ -6,13 +6,18 @@ import { WrongTaskStatusException } from './exceptions/wrong-task-status.excepti
 import { Repository } from 'typeorm';
 import { Task } from './task.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CreateTaskLabelDto } from './create-task-label.dto';
+import { TaskLabel } from './task-label.entity';
 
 @Injectable()
 export class TasksService {
 
     constructor(
         @InjectRepository(Task)
-        private readonly tasksRepository: Repository<Task> 
+        private readonly tasksRepository: Repository<Task>,
+
+        @InjectRepository(TaskLabel)
+        private readonly taskLabelsRepository: Repository<TaskLabel > 
     ){
 
     }
@@ -39,6 +44,15 @@ export class TasksService {
 
         Object.assign(task, updateTaskDto);
         return await this.tasksRepository.save(task);
+    }
+
+    public async addLabels(task: Task, labelDtos: CreateTaskLabelDto[]): Promise<Task>{
+        const labels = labelDtos.map((label) =>
+            this.taskLabelsRepository.create(label),
+        );
+
+        task.taskLabels = [...task.taskLabels, ...labels ];
+        return await this.tasksRepository.save(task); 
     }
 
     public async deleteTask(task: Task) : Promise<void> {
