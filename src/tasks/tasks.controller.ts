@@ -5,6 +5,7 @@ import { FindOneParams } from './find-one.params';
 import { UpdateTaskDto } from './update-task.dto';
 import { WrongTaskStatusException } from './exceptions/wrong-task-status.exception';
 import { Task } from './task.entity';
+import { CreateTaskLabelDto } from './create-task-label.dto';
 
 @Controller('tasks')
 export class TasksController {
@@ -18,7 +19,7 @@ export class TasksController {
 
     @Get('/:id')
     public async findOne(@Param() params: FindOneParams ): Promise<Task | null> {
-        return await this.FindOneOrFail(params.id);
+        return await this.findOneOrFail(params.id);
     }
 
     @Post()
@@ -31,7 +32,7 @@ export class TasksController {
         @Param() params: FindOneParams,
         @Body() updateTaskDto: UpdateTaskDto
     ): Promise<Task>{
-        const task = await this.FindOneOrFail(params.id);
+        const task = await this.findOneOrFail(params.id);
         try{
             return await this.tasksService.updateTask(task, updateTaskDto);
         }catch(error){
@@ -45,11 +46,21 @@ export class TasksController {
     @Delete('/:id')
     @HttpCode(HttpStatus.NO_CONTENT)
     public async deleteTask(@Param() params: FindOneParams): Promise<void>{
-        const task = await this.FindOneOrFail(params.id);
+        const task = await this.findOneOrFail(params.id);
         await this.tasksService.deleteTask(task);
     }
 
-    private async FindOneOrFail(id: string): Promise<Task>{
+    @Post('/:id/labels')
+    async addLabels(
+        @Param() { id }: FindOneParams,
+        @Body() labels: CreateTaskLabelDto[],
+    ): Promise<Task> 
+    {
+        const task = await this.findOneOrFail(id);
+        return await this.tasksService.addLabels(task, labels);
+    }
+
+    private async findOneOrFail(id: string): Promise<Task>{
         const task = await this.tasksService.findOneTaskById(id);
         if(!task){
             throw new NotFoundException();
